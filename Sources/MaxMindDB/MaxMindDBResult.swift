@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CoreLocation
 
 public struct MaxMindDBResult: Codable {
 
