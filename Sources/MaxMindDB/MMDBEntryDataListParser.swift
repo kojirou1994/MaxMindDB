@@ -52,9 +52,13 @@ class MMDBEntryDataListParser {
         if strict, last != nil {
             throw MMDBEntryDataListParserError.extraEntryData
         }
+        #if os(Linux)
+        return try JSONDecoder().decode(MaxMindDBResult.self, from: json.data(using: .utf8)!)
+        #else
         return try autoreleasepool { () -> MaxMindDBResult in
             return try JSONDecoder().decode(MaxMindDBResult.self, from: json.data(using: .utf8)!)
         }
+        #endif
     }
 
     private func dumpList(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws
