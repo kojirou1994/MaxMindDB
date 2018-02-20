@@ -2,7 +2,8 @@ import XCTest
 @testable import MaxMindDB
 
 class MaxMindDBTests: XCTestCase {
-    let db = try! MaxMindDB(mmdbPath: "./GeoLite2-City.mmdb")
+    let cityDB = try! MaxMindDB(mmdbPath: "./GeoLite2-City.mmdb")
+    let countryDB = try! MaxMindDB(mmdbPath: "./GeoLite2-Country.mmdb")
     
     func generateRandomIP() -> String {
         #if os(macOS)
@@ -12,20 +13,28 @@ class MaxMindDBTests: XCTestCase {
         #endif
     }
     
-    func testDB() {
-        
-        
+    func testCountryDB() {
         for _ in 0..<120000 {
             do {
-                _ = try db.lookupResult(ip: generateRandomIP())
+                _ = try countryDB.lookupResult(ip: generateRandomIP())
             } catch {
-                print(error)
+//                print(error)
             }
         }
-
+    }
+    
+    func testCityDB() {
+        for _ in 0..<120000 {
+            do {
+                _ = try cityDB.lookupResult(ip: generateRandomIP())
+            } catch {
+//                print(error)
+            }
+        }
     }
 
     static var allTests = [
-        ("testExample", testDB),
+        ("testCountryDB", testCountryDB),
+        ("testCityDB", testCityDB)
     ]
 }
