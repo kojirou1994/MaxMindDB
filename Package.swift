@@ -8,20 +8,30 @@ let package = Package(
         .library(
             name: "MaxMindDB",
             targets: ["MaxMindDB"]),
+        .library(
+            name: "MaxMindDB_static",
+            type: .static,
+            targets: ["MaxMindDB"]),
+        .library(
+            name: "MaxMindDB_dynamic",
+            type: .dynamic,
+            targets: ["MaxMindDB"]),
         .executable(
-            name: "MaxMindDB-cli",
-            targets: ["MaxMindDB-cli"]
+            name: "MaxMindDB_cli",
+            targets: ["MaxMindDB_cli"]
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/kojirou1994/Clibmaxminddb", from: "1.0.0"),
     ],
     targets: [
         .target(
-            name: "MaxMindDB",
+            name: "Clibmaxminddb",
             dependencies: []),
         .target(
-            name: "MaxMindDB-cli",
+            name: "MaxMindDB",
+            dependencies: ["Clibmaxminddb"]),
+        .target(
+            name: "MaxMindDB_cli",
             dependencies: ["MaxMindDB"]),
         .testTarget(
             name: "MaxMindDBTests",
