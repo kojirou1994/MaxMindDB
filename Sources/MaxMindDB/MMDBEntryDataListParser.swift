@@ -18,23 +18,25 @@ extension MMDB_entry_data_s {
 
     var utf8String: String? {
         guard type == MMDB_DATA_TYPE_UTF8_STRING, has_data,
-            let stringValue = String.init(bytes: Data.init(bytes: UnsafeRawPointer(utf8_string), count: Int(data_size)), encoding: .utf8) else {
+            case let stringData = Data.init(bytes: UnsafeRawPointer(utf8_string), count: Int(data_size)),
+            let stringValue = String.init(bytes: stringData, encoding: .utf8) else {
                 return nil
         }
         return stringValue
     }
+
 }
 
 class MMDBEntryDataListParser {
 
     static let shared = MMDBEntryDataListParser()
 
-    func parse(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> Any {
+    func parse(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> [String: Any] {
         let result = try dumpList(list: list)
         if strict, result.1 != nil {
             throw MMDBEntryDataListParserError.extraEntryData
         }
-        return result.0
+        return result.0 as! [String: Any]
     }
 
     func parseJSON(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> String {
@@ -47,7 +49,7 @@ class MMDBEntryDataListParser {
     }
 
     func parseResult(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> MaxMindDBResult {
-        var json = ""
+        var json = String()
         let last = try dumpList(list: list, to: &json)
         if strict, last != nil {
             throw MMDBEntryDataListParserError.extraEntryData
@@ -173,4 +175,5 @@ class MMDBEntryDataListParser {
                 throw MMDBEntryDataListParserError.unsupportedDataType
             }
     }
+
 }
