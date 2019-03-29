@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Clibmaxminddb
 
 public enum MMDBEntryDataListParserError: Error {
     case lackingEntryData

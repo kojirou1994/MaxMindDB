@@ -1,4 +1,6 @@
-import Clibmaxminddb
+#if SWIFT_PACKAGE
+@_exported import Clibmaxminddb
+#endif
 import Foundation
 
 public enum MaxMindDBError: Error {
