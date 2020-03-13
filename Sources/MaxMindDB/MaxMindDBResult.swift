@@ -8,13 +8,10 @@
 import Foundation
 
 public struct MaxMindDBResult: Codable {
-
     public struct RegisteredCountry: Codable {
-
         public let isoCode: String
 
         public struct Names: Codable {
-
             public let ja: String?
 
             public let zh_CN: String?
@@ -41,7 +38,6 @@ public struct MaxMindDBResult: Codable {
                 case de
                 case fr
             }
-
         }
 
         public let names: Names
@@ -53,17 +49,14 @@ public struct MaxMindDBResult: Codable {
             case names
             case geonameId = "geoname_id"
         }
-
     }
 
     public let registeredCountry: RegisteredCountry?
 
     public struct Subdivisions: Codable {
-
         public let isoCode: String
 
         public struct Names: Codable {
-
             public let fr: String?
 
             public let zh_CN: String?
@@ -75,7 +68,6 @@ public struct MaxMindDBResult: Codable {
                 case zh_CN = "zh-CN"
                 case en
             }
-
         }
 
         public let names: Names
@@ -87,15 +79,12 @@ public struct MaxMindDBResult: Codable {
             case names
             case geonameId = "geoname_id"
         }
-
     }
 
     public let subdivisions: [Subdivisions]?
 
     public struct City: Codable {
-
         public struct Names: Codable {
-
             public let ja: String?
 
             public let zh_CN: String?
@@ -122,7 +111,6 @@ public struct MaxMindDBResult: Codable {
                 case de
                 case fr
             }
-
         }
 
         public let names: Names
@@ -133,13 +121,11 @@ public struct MaxMindDBResult: Codable {
             case names
             case geonameId = "geoname_id"
         }
-
     }
 
     public let city: City?
 
     public struct Location: Codable {
-
         public let latitude: Double
 
         public let timeZone: String?
@@ -154,15 +140,12 @@ public struct MaxMindDBResult: Codable {
             case longitude
             case accuracyRadius = "accuracy_radius"
         }
-
     }
 
     public let location: Location?
 
     public struct Continent: Codable {
-
         public struct Names: Codable {
-
             public let ja: String?
 
             public let zh_CN: String?
@@ -189,7 +172,6 @@ public struct MaxMindDBResult: Codable {
                 case de
                 case fr
             }
-
         }
 
         public let names: Names
@@ -203,17 +185,14 @@ public struct MaxMindDBResult: Codable {
             case code
             case geonameId = "geoname_id"
         }
-
     }
 
     public let continent: Continent?
 
     public struct Country: Codable {
-
         public let isoCode: String
 
         public struct Names: Codable {
-
             public let ja: String?
 
             public let zh_CN: String?
@@ -240,7 +219,6 @@ public struct MaxMindDBResult: Codable {
                 case de
                 case fr
             }
-
         }
 
         public let names: Names
@@ -252,7 +230,6 @@ public struct MaxMindDBResult: Codable {
             case names
             case geonameId = "geoname_id"
         }
-
     }
 
     public let country: Country?
@@ -265,6 +242,4 @@ public struct MaxMindDBResult: Codable {
         case continent
         case country
     }
-
 }
-

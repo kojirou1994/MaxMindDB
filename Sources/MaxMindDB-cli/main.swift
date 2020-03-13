@@ -7,6 +7,7 @@ func usage() {
 
 guard CommandLine.argc > 1 else {
     print("No input!")
+    usage()
     exit(1)
 }
 

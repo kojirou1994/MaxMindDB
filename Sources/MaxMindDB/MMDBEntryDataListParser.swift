@@ -11,168 +11,89 @@ public enum MMDBEntryDataListParserError: Error {
     case lackingEntryData
     case extraEntryData
     case unsupportedDataType
+    case emptyKey
 }
 
 extension MMDB_entry_data_s {
-
     var utf8String: String? {
-        guard type == MMDB_DATA_TYPE_UTF8_STRING, has_data,
-            case let stringData = Data.init(bytes: UnsafeRawPointer(utf8_string), count: Int(data_size)),
-            let stringValue = String.init(bytes: stringData, encoding: .utf8) else {
-                return nil
+        guard type == MMDB_DATA_TYPE_UTF8_STRING, has_data else {
+            return nil
         }
-        return stringValue
+        return String(decoding: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: utf8_string), count: numericCast(data_size), deallocator: .none), as: UTF8.self)
     }
-
 }
 
 class MMDBEntryDataListParser {
-
     static let shared = MMDBEntryDataListParser()
 
+    struct ParsedResult<V> {
+        let value: V
+        let next: UnsafeMutablePointer<MMDB_entry_data_list_s>?
+    }
+
     func parse(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> [String: Any] {
-        let result = try dumpList(list: list)
-        if strict, result.1 != nil {
+        let result = try parseDictionary(list: list)
+        if strict, result.next != nil {
             throw MMDBEntryDataListParserError.extraEntryData
         }
-        return result.0 as! [String: Any]
+        return result.value
     }
 
-    func parseJSON(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> String {
-        var json = ""
-        let last = try dumpList(list: list, to: &json)
-        if strict, last != nil {
-            throw MMDBEntryDataListParserError.extraEntryData
-        }
-        return json
-    }
+    private func parseDictionary(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws -> ParsedResult<[String: Any]> {
+        var result = [String: Any]()
+        var size = list.pointee.entry_data.data_size
 
-    func parseResult(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> MaxMindDBResult {
-        var json = String()
-        let last = try dumpList(list: list, to: &json)
-        if strict, last != nil {
-            throw MMDBEntryDataListParserError.extraEntryData
-        }
-        #if os(Linux)
-        return try JSONDecoder().decode(MaxMindDBResult.self, from: json.data(using: .utf8)!)
-        #else
-        return try autoreleasepool { () -> MaxMindDBResult in
-            return try JSONDecoder().decode(MaxMindDBResult.self, from: json.data(using: .utf8)!)
-        }
-        #endif
-    }
-
-    private func dumpList(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws
-        -> (Any, UnsafeMutablePointer<MMDB_entry_data_list_s>?) {
-            let entryData = list.pointee.entry_data
-            switch Int32(entryData.type) {
-            case MMDB_DATA_TYPE_MAP:
-//                print("Map size: \(entryData.data_size)")
-                var result = [String: Any]()
-                var size = entryData.data_size
-                var next = list.pointee.next
-                while size > 0 {
-                    guard next != nil, let valueP = next!.pointee.next else {
-                        throw MMDBEntryDataListParserError.lackingEntryData
-                    }
-                    let key = next!.pointee.entry_data.utf8String!
-                    let value = try dumpList(list: valueP)
-                    result[key] = value.0
-                    next = value.1
-                    size -= 1
-                }
-                return (result, next)
-            case MMDB_DATA_TYPE_UTF8_STRING:
-//                print("\(entryData.utf8String!) <utf8-string>")
-                return (entryData.utf8String!, list.pointee.next)
-            case MMDB_DATA_TYPE_UINT32:
-//                print("\(entryData.uint32) <uint32>")
-                return (entryData.uint32, list.pointee.next)
-            case MMDB_DATA_TYPE_DOUBLE:
-//                print("\(entryData.double_value) <double>")
-                return (entryData.double_value, list.pointee.next)
-            case MMDB_DATA_TYPE_UINT16:
-//                print("\(entryData.uint16) <uint16>")
-                return (entryData.uint16, list.pointee.next)
-            case MMDB_DATA_TYPE_ARRAY:
-//                print("Array size: \(entryData.data_size)")
-                var array = [Any]()
-                var size = entryData.data_size
-                var next = list.pointee.next
-                while size > 0 {
-                    guard next != nil else {
-                        throw MMDBEntryDataListParserError.lackingEntryData
-                    }
-                    let value = try dumpList(list: next!)
-                    array.append(value.0)
-                    next = value.1
-                    size -= 1
-                }
-                return (array, next)
-            case MMDB_DATA_TYPE_BOOLEAN:
-//                print("\(entryData.boolean) <boolean>")
-                return (entryData.boolean, list.pointee.next)
-            default:
-                throw MMDBEntryDataListParserError.unsupportedDataType
+        var currentList = list.pointee.next
+        while size > 0 {
+            guard let keyList = currentList, let valueData = keyList.pointee.next else {
+                throw MMDBEntryDataListParserError.lackingEntryData
             }
-    }
-
-    private func dumpList(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, to json: inout String) throws
-        -> UnsafeMutablePointer<MMDB_entry_data_list_s>? {
-            let entryData = list.pointee.entry_data
-            switch Int32(entryData.type) {
-            case MMDB_DATA_TYPE_MAP:
-                json += "{"
-                var size = entryData.data_size
-                var next = list.pointee.next
-                while size > 0 {
-                    guard next != nil, let valueP = next!.pointee.next else {
-                        throw MMDBEntryDataListParserError.lackingEntryData
-                    }
-                    let key = next!.pointee.entry_data.utf8String!
-                    json += "\"\(key)\":"
-                    next = try dumpList(list: valueP, to: &json)
-                    size -= 1
-                    if size > 0 {
-                        json += ","
-                    }
-                }
-                json += "}"
-                return next
-            case MMDB_DATA_TYPE_UTF8_STRING:
-                json += "\"\(entryData.utf8String!)\""
-                return list.pointee.next
-            case MMDB_DATA_TYPE_UINT32:
-                json += entryData.uint32.description
-                return list.pointee.next
-            case MMDB_DATA_TYPE_DOUBLE:
-                json += entryData.double_value.description
-                return list.pointee.next
-            case MMDB_DATA_TYPE_UINT16:
-                json += entryData.uint16.description
-                return list.pointee.next
-            case MMDB_DATA_TYPE_ARRAY:
-                json += "["
-                var size = entryData.data_size
-                var next = list.pointee.next
-                while size > 0 {
-                    guard next != nil else {
-                        throw MMDBEntryDataListParserError.lackingEntryData
-                    }
-                    next = try dumpList(list: next!, to: &json)
-                    size -= 1
-                    if size > 0 {
-                        json += ","
-                    }
-                }
-                json += "]"
-                return next
-            case MMDB_DATA_TYPE_BOOLEAN:
-                json += entryData.boolean.description
-                return list.pointee.next
-            default:
-                throw MMDBEntryDataListParserError.unsupportedDataType
+            precondition(numericCast(keyList.pointee.entry_data.type) == MMDB_DATA_TYPE_UTF8_STRING)
+            guard let key = keyList.pointee.entry_data.utf8String else {
+                throw MMDBEntryDataListParserError.emptyKey
             }
+            let value = try parseValue(list: valueData)
+            result[key] = value.value
+            currentList = value.next
+            size -= 1
+        }
+        return .init(value: result, next: currentList)
     }
 
+    private func parseValue(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws
+        -> ParsedResult<Any> {
+        let entryData = list.pointee.entry_data
+        switch Int32(entryData.type) {
+        case MMDB_DATA_TYPE_UTF8_STRING:
+            return .init(value: entryData.utf8String!, next: list.pointee.next)
+        case MMDB_DATA_TYPE_BOOLEAN:
+            return .init(value: entryData.boolean, next: list.pointee.next)
+        case MMDB_DATA_TYPE_UINT16:
+            return .init(value: entryData.uint16, next: list.pointee.next)
+        case MMDB_DATA_TYPE_UINT32:
+            return .init(value: entryData.uint32, next: list.pointee.next)
+        case MMDB_DATA_TYPE_DOUBLE:
+            return .init(value: entryData.double_value, next: list.pointee.next)
+        case MMDB_DATA_TYPE_MAP:
+            let dic = try parseDictionary(list: list)
+            return .init(value: dic.value, next: dic.next)
+        case MMDB_DATA_TYPE_ARRAY:
+            var array = [Any]()
+            var dataSize = entryData.data_size
+            array.reserveCapacity(numericCast(dataSize))
+            var currentList = list.pointee.next
+            while dataSize > 0 {
+                guard let nextValue = currentList else {
+                    throw MMDBEntryDataListParserError.lackingEntryData
+                }
+                let value = try parseValue(list: nextValue)
+                array.append(value.value)
+                currentList = value.next
+                dataSize -= 1
+            }
+            return .init(value: array, next: currentList)
+        default:
+            throw MMDBEntryDataListParserError.unsupportedDataType
+        }
+    }
 }

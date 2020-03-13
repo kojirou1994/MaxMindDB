@@ -1,6 +1,7 @@
 #if SWIFT_PACKAGE
 @_exported import Clibmaxminddb
 #endif
+import DictionaryCoding
 import Foundation
 
 public enum MaxMindDBError: Error {
@@ -10,37 +11,38 @@ public enum MaxMindDBError: Error {
 }
 
 public class MaxMindDB {
-
-    var mmdb: MMDB_s
+    private var mmdb: MMDB_s
 
     public init(mmdbPath: String) throws {
         mmdb = MMDB_s()
         try showError(MMDB_open(mmdbPath, UInt32(MMDB_MODE_MMAP), &mmdb))
     }
 
+    public convenience init(mmdbURL: URL) throws {
+        assert(mmdbURL.isFileURL)
+        try self.init(mmdbPath: mmdbURL.path)
+    }
+
     deinit {
         MMDB_close(&mmdb)
     }
 
-    public func lookupJSON(ip: String) throws -> String {
+    public func lookupJSON(ip: String) throws -> [String: Any] {
         let entry_data_list = try lookup(ip: ip)
         defer {
             MMDB_free_entry_data_list(entry_data_list)
         }
-        return try MMDBEntryDataListParser.shared.parseJSON(list: entry_data_list)
+        return try MMDBEntryDataListParser.shared.parse(list: entry_data_list)
     }
 
     public func lookupResult(ip: String) throws -> MaxMindDBResult {
-        let entry_data_list = try lookup(ip: ip)
-        defer {
-            MMDB_free_entry_data_list(entry_data_list)
-        }
-        return try MMDBEntryDataListParser.shared.parseResult(list: entry_data_list)
+        let dic = try lookupJSON(ip: ip)
+        let decoder = DictionaryDecoder()
+        return try decoder.decode(MaxMindDBResult.self, from: dic)
     }
 
-    private func lookup(ip: String) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
-
-        var entry_data_list: UnsafeMutablePointer<MMDB_entry_data_list_s>? = nil
+    internal func lookup(ip: String) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
+        var entry_data_list: UnsafeMutablePointer<MMDB_entry_data_list_s>?
 
         var gai_error: Int32 = 0
         var mmdb_error: Int32 = 0
@@ -50,15 +52,16 @@ public class MaxMindDB {
             throw MaxMindDBError.noEntry
         }
         try showError(MMDB_get_entry_data_list(&result.entry, &entry_data_list))
-        if entry_data_list == nil {
+        guard let list = entry_data_list else {
             throw MaxMindDBError.noEntryData
         }
-        return entry_data_list!
+        return list
     }
 
-    private func showError(_ code: Int32) throws {
+    @inlinable
+    func showError(_ code: Int32) throws {
         if code != MMDB_SUCCESS {
-            throw MaxMindDBError.mmdbError(String.init(cString: MMDB_strerror(code)))
+            throw MaxMindDBError.mmdbError(String(cString: MMDB_strerror(code)))
         }
     }
 }
