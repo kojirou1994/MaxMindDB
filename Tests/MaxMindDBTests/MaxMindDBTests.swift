@@ -2,39 +2,29 @@ import XCTest
 @testable import MaxMindDB
 
 class MaxMindDBTests: XCTestCase {
-    let cityDB = try! MaxMindDB(mmdbPath: "./GeoLite2-City.mmdb")
-    let countryDB = try! MaxMindDB(mmdbPath: "./GeoLite2-Country.mmdb")
+    let testDB = try! MaxMindDB(mmdbPath: "/Users/kojirou/Projects/MaxMindDB/GeoLite2-City.mmdb")
+    let ip = "223.5.5.5"
     
-    func generateRandomIP() -> String {
-        #if os(macOS)
-        return "\(arc4random_uniform(256)).\(arc4random_uniform(256)).\(arc4random_uniform(256)).\(arc4random_uniform(256))"
-        #elseif os(Linux)
-        return "\(random() % (256)).\(random() % (256)).\(random() % (256)).\(random() % (256))"
-        #endif
+    override func setUp() {
+        super.setUp()
     }
-    
-    func testCountryDB() {
-        for _ in 0..<120000 {
-            do {
-                _ = try countryDB.lookupResult(ip: generateRandomIP())
-            } catch {
-//                print(error)
-            }
+
+    func testGetResult() {
+        XCTAssertNoThrow(try testDB.lookupResult(ip: ip))
+        measure {
+            _ = try! testDB.lookupResult(ip: ip)
         }
     }
     
-    func testCityDB() {
-        for _ in 0..<120000 {
-            do {
-                _ = try cityDB.lookupResult(ip: generateRandomIP())
-            } catch {
-//                print(error)
-            }
+    func testGetJSON() {
+        XCTAssertNoThrow(try testDB.lookupJSON(ip: ip))
+        measure {
+            _ = try! testDB.lookupJSON(ip: ip)
         }
     }
 
     static var allTests = [
-        ("testCountryDB", testCountryDB),
-        ("testCityDB", testCityDB)
+        ("testGetJSON", testGetJSON),
+        ("testGetResult", testGetResult),
     ]
 }

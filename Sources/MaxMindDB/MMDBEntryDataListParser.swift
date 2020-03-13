@@ -11,7 +11,7 @@ public enum MMDBEntryDataListParserError: Error {
     case lackingEntryData
     case extraEntryData
     case unsupportedDataType
-    case emptyKey
+    case invalidString
 }
 
 extension MMDB_entry_data_s {
@@ -32,6 +32,7 @@ class MMDBEntryDataListParser {
     }
 
     func parse(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> [String: Any] {
+        precondition(numericCast(list.pointee.entry_data.type) == MMDB_DATA_TYPE_MAP)
         let result = try parseDictionary(list: list)
         if strict, result.next != nil {
             throw MMDBEntryDataListParserError.extraEntryData
@@ -50,7 +51,7 @@ class MMDBEntryDataListParser {
             }
             precondition(numericCast(keyList.pointee.entry_data.type) == MMDB_DATA_TYPE_UTF8_STRING)
             guard let key = keyList.pointee.entry_data.utf8String else {
-                throw MMDBEntryDataListParserError.emptyKey
+                throw MMDBEntryDataListParserError.invalidString
             }
             let value = try parseValue(list: valueData)
             result[key] = value.value
@@ -62,24 +63,26 @@ class MMDBEntryDataListParser {
 
     private func parseValue(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws
         -> ParsedResult<Any> {
-        let entryData = list.pointee.entry_data
-        switch Int32(entryData.type) {
+        switch Int32(list.pointee.entry_data.type) {
         case MMDB_DATA_TYPE_UTF8_STRING:
-            return .init(value: entryData.utf8String!, next: list.pointee.next)
+            guard let str = list.pointee.entry_data.utf8String else {
+                throw MMDBEntryDataListParserError.invalidString
+            }
+            return .init(value: str, next: list.pointee.next)
         case MMDB_DATA_TYPE_BOOLEAN:
-            return .init(value: entryData.boolean, next: list.pointee.next)
+            return .init(value: list.pointee.entry_data.boolean, next: list.pointee.next)
         case MMDB_DATA_TYPE_UINT16:
-            return .init(value: entryData.uint16, next: list.pointee.next)
+            return .init(value: list.pointee.entry_data.uint16, next: list.pointee.next)
         case MMDB_DATA_TYPE_UINT32:
-            return .init(value: entryData.uint32, next: list.pointee.next)
+            return .init(value: list.pointee.entry_data.uint32, next: list.pointee.next)
         case MMDB_DATA_TYPE_DOUBLE:
-            return .init(value: entryData.double_value, next: list.pointee.next)
+            return .init(value: list.pointee.entry_data.double_value, next: list.pointee.next)
         case MMDB_DATA_TYPE_MAP:
             let dic = try parseDictionary(list: list)
             return .init(value: dic.value, next: dic.next)
         case MMDB_DATA_TYPE_ARRAY:
             var array = [Any]()
-            var dataSize = entryData.data_size
+            var dataSize = list.pointee.entry_data.data_size
             array.reserveCapacity(numericCast(dataSize))
             var currentList = list.pointee.next
             while dataSize > 0 {
