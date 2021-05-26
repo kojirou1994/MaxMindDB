@@ -1,11 +1,5 @@
-//
-//  MMDBEntryDataListParser.swift
-//  MaxMindDB
-//
-//  Created by Kojirou on 2018/2/5.
-//
-
 import Foundation
+import CMaxMindDB
 
 public enum MMDBEntryDataListParserError: Error {
     case lackingEntryData

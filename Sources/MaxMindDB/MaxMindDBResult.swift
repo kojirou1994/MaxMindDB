@@ -1,10 +1,3 @@
-//
-//  MaxMindDBResult.swift
-//  MaxMindDB
-//
-//  Created by Kojirou on 2018/2/7.
-//
-
 import Foundation
 
 public struct MaxMindDBResult: Codable {

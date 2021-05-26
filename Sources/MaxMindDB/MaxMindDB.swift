@@ -1,6 +1,4 @@
-#if SWIFT_PACKAGE
-@_exported import Clibmaxminddb
-#endif
+import CMaxMindDB
 import DictionaryCoding
 import Foundation
 

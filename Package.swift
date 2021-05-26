@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.4
 
 import PackageDescription
 
@@ -20,22 +20,20 @@ let package = Package(
             name: "MaxMindDB-dynamic",
             type: .dynamic,
             targets: ["MaxMindDB"]),
-        .executable(
-            name: "MaxMindDB-cli",
-            targets: ["MaxMindDB-cli"]
-        )
     ],
     dependencies: [
-        .package(url: "https://github.com/elegantchaos/DictionaryCoding", from: "1.0.0")
+        .package(url: "https://github.com/elegantchaos/DictionaryCoding.git", from: "1.0.0"),
     ],
     targets: [
         .target(
-            name: "Clibmaxminddb",
-            dependencies: []),
+            name: "CMaxMindDB",
+          resources: [
+            .copy("LICENSE"),
+          ]),
         .target(
             name: "MaxMindDB",
-            dependencies: ["Clibmaxminddb", "DictionaryCoding"]),
-        .target(
+            dependencies: ["CMaxMindDB", "DictionaryCoding"]),
+        .executableTarget(
             name: "MaxMindDB-cli",
             dependencies: ["MaxMindDB"]),
         .testTarget(
