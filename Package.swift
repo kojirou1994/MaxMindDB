@@ -24,6 +24,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/elegantchaos/DictionaryCoding.git", from: "1.0.0"),
+    .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.3"),
   ],
   targets: [
     .target(
@@ -35,8 +36,11 @@ let package = Package(
       name: "MaxMindDB",
       dependencies: ["CMaxMindDB", "DictionaryCoding"]),
     .executableTarget(
-      name: "MaxMindDB-cli",
-      dependencies: ["MaxMindDB"]),
+      name: "mmdb-cli",
+      dependencies: [
+        "MaxMindDB",
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+      ]),
     .testTarget(
       name: "MaxMindDBTests",
       dependencies: ["MaxMindDB"]),

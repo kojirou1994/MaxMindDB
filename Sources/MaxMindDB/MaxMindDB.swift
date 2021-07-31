@@ -2,10 +2,21 @@ import CMaxMindDB
 import DictionaryCoding
 import Foundation
 
-public enum MaxMindDBError: Error {
+public enum MaxMindDBError: Error, CustomStringConvertible {
   case noEntry
   case noEntryData
   case mmdbError(String)
+
+  public var description: String {
+    switch self {
+    case .noEntry:
+      return "No entry."
+    case .noEntryData:
+      return "No entry data."
+    case .mmdbError(let info):
+      return "Error from libmaxminddb: \(info)."
+    }
+  }
 }
 
 public class MaxMindDB {
