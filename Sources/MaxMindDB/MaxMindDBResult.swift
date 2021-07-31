@@ -1,40 +1,13 @@
 import Foundation
 
-public struct MaxMindDBResult: Codable {
-  public struct RegisteredCountry: Codable {
+public typealias MaxMindDBResultNames = [String: String]
+
+public struct MaxMindDBResult: Decodable {
+
+  public struct CountrySubdivisionData: Decodable {
+
     public let isoCode: String
-
-    public struct Names: Codable {
-      public let ja: String?
-
-      public let zh_CN: String?
-
-      public let pt_BR: String?
-
-      public let en: String
-
-      public let ru: String?
-
-      public let es: String?
-
-      public let de: String?
-
-      public let fr: String?
-
-      private enum CodingKeys: String, CodingKey {
-        case ja
-        case zh_CN = "zh-CN"
-        case pt_BR = "pt-BR"
-        case en
-        case ru
-        case es
-        case de
-        case fr
-      }
-    }
-
-    public let names: Names
-
+    public let names: MaxMindDBResultNames
     public let geonameId: Int
 
     private enum CodingKeys: String, CodingKey {
@@ -44,70 +17,13 @@ public struct MaxMindDBResult: Codable {
     }
   }
 
-  public let registeredCountry: RegisteredCountry?
+  public let registeredCountry: CountrySubdivisionData?
 
-  public struct Subdivisions: Codable {
-    public let isoCode: String
+  public let subdivisions: [CountrySubdivisionData]?
 
-    public struct Names: Codable {
-      public let fr: String?
+  public struct City: Decodable {
 
-      public let zh_CN: String?
-
-      public let en: String
-
-      private enum CodingKeys: String, CodingKey {
-        case fr
-        case zh_CN = "zh-CN"
-        case en
-      }
-    }
-
-    public let names: Names
-
-    public let geonameId: Int
-
-    private enum CodingKeys: String, CodingKey {
-      case isoCode = "iso_code"
-      case names
-      case geonameId = "geoname_id"
-    }
-  }
-
-  public let subdivisions: [Subdivisions]?
-
-  public struct City: Codable {
-    public struct Names: Codable {
-      public let ja: String?
-
-      public let zh_CN: String?
-
-      public let pt_BR: String?
-
-      public let en: String
-
-      public let ru: String?
-
-      public let es: String?
-
-      public let de: String?
-
-      public let fr: String?
-
-      private enum CodingKeys: String, CodingKey {
-        case ja
-        case zh_CN = "zh-CN"
-        case pt_BR = "pt-BR"
-        case en
-        case ru
-        case es
-        case de
-        case fr
-      }
-    }
-
-    public let names: Names
-
+    public let names: MaxMindDBResultNames
     public let geonameId: Int
 
     private enum CodingKeys: String, CodingKey {
@@ -118,13 +34,11 @@ public struct MaxMindDBResult: Codable {
 
   public let city: City?
 
-  public struct Location: Codable {
+  public struct Location: Decodable {
+
     public let latitude: Double
-
     public let timeZone: String?
-
     public let longitude: Double
-
     public let accuracyRadius: Int
 
     private enum CodingKeys: String, CodingKey {
@@ -137,40 +51,10 @@ public struct MaxMindDBResult: Codable {
 
   public let location: Location?
 
-  public struct Continent: Codable {
-    public struct Names: Codable {
-      public let ja: String?
+  public struct Continent: Decodable {
 
-      public let zh_CN: String?
-
-      public let pt_BR: String?
-
-      public let en: String
-
-      public let ru: String?
-
-      public let es: String?
-
-      public let de: String?
-
-      public let fr: String?
-
-      private enum CodingKeys: String, CodingKey {
-        case ja
-        case zh_CN = "zh-CN"
-        case pt_BR = "pt-BR"
-        case en
-        case ru
-        case es
-        case de
-        case fr
-      }
-    }
-
-    public let names: Names
-
+    public let names: MaxMindDBResultNames
     public let code: String
-
     public let geonameId: Int
 
     private enum CodingKeys: String, CodingKey {
@@ -182,50 +66,7 @@ public struct MaxMindDBResult: Codable {
 
   public let continent: Continent?
 
-  public struct Country: Codable {
-    public let isoCode: String
-
-    public struct Names: Codable {
-      public let ja: String?
-
-      public let zh_CN: String?
-
-      public let pt_BR: String?
-
-      public let en: String
-
-      public let ru: String?
-
-      public let es: String?
-
-      public let de: String?
-
-      public let fr: String?
-
-      private enum CodingKeys: String, CodingKey {
-        case ja
-        case zh_CN = "zh-CN"
-        case pt_BR = "pt-BR"
-        case en
-        case ru
-        case es
-        case de
-        case fr
-      }
-    }
-
-    public let names: Names
-
-    public let geonameId: Int
-
-    private enum CodingKeys: String, CodingKey {
-      case isoCode = "iso_code"
-      case names
-      case geonameId = "geoname_id"
-    }
-  }
-
-  public let country: Country?
+  public let country: CountrySubdivisionData?
 
   private enum CodingKeys: String, CodingKey {
     case registeredCountry = "registered_country"
