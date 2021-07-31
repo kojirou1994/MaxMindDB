@@ -5,6 +5,7 @@ import Foundation
 public enum MaxMindDBError: Error, CustomStringConvertible {
   case noEntry
   case noEntryData
+  case gaiError(CInt)
   case mmdbError(String)
 
   public var description: String {
@@ -13,6 +14,8 @@ public enum MaxMindDBError: Error, CustomStringConvertible {
       return "No entry."
     case .noEntryData:
       return "No entry data."
+    case .gaiError(let error):
+      return "Error from getaddrinfo: \(error)."
     case .mmdbError(let info):
       return "Error from libmaxminddb: \(info)."
     }
@@ -20,6 +23,9 @@ public enum MaxMindDBError: Error, CustomStringConvertible {
 }
 
 public final class MaxMindDB {
+
+  public static let version = PACKAGE_VERSION
+
   private var mmdb: MMDB_s
 
   public init(mmdbPath: String) throws {
@@ -50,24 +56,57 @@ public final class MaxMindDB {
     return try decoder.decode(MaxMindDBResult.self, from: dic)
   }
 
-  internal func lookup(ip: String) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
-    var entry_data_list: UnsafeMutablePointer<MMDB_entry_data_list_s>?
+  public func lookupJSON(sockaddr: UnsafePointer<sockaddr>) throws -> [String: Any] {
+    let entry_data_list = try lookup(sockaddr: sockaddr)
+    defer {
+      MMDB_free_entry_data_list(entry_data_list)
+    }
+    return try MMDBEntryDataListParser.parse(list: entry_data_list)
+  }
 
-    var gai_error: Int32 = 0
-    var mmdb_error: Int32 = 0
-    var result = MMDB_lookup_string(&mmdb, ip, &gai_error, &mmdb_error)
-    try showError(mmdb_error)
+  public func lookupResult(sockaddr: UnsafePointer<sockaddr>) throws -> MaxMindDBResult {
+    let dic = try lookupJSON(sockaddr: sockaddr)
+    let decoder = DictionaryDecoder()
+    return try decoder.decode(MaxMindDBResult.self, from: dic)
+  }
+
+  internal func lookup(ip: String) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
+
+    var gaiError: CInt = 0
+    var mmdbError: CInt = 0
+    var result = MMDB_lookup_string(&mmdb, ip, &gaiError, &mmdbError)
+    if gaiError != 0 {
+      throw MaxMindDBError.gaiError(gaiError)
+    }
+    try showError(mmdbError)
+
+    return try getEntryDataList(result: &result)
+  }
+
+  internal func lookup(sockaddr: UnsafePointer<sockaddr>) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
+
+    var mmdbError: CInt = 0
+    var result = MMDB_lookup_sockaddr(&mmdb, sockaddr, &mmdbError)
+    try showError(mmdbError)
+
+    return try getEntryDataList(result: &result)
+  }
+
+  func getEntryDataList(result: inout MMDB_lookup_result_s) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
     guard result.found_entry else {
       throw MaxMindDBError.noEntry
     }
-    try showError(MMDB_get_entry_data_list(&result.entry, &entry_data_list))
-    guard let list = entry_data_list else {
+
+    var entryDataList: UnsafeMutablePointer<MMDB_entry_data_list_s>?
+    try showError(MMDB_get_entry_data_list(&result.entry, &entryDataList))
+
+    guard let list = entryDataList else {
       throw MaxMindDBError.noEntryData
     }
+
     return list
   }
 
-  @inlinable
   func showError(_ code: Int32) throws {
     if code != MMDB_SUCCESS {
       throw MaxMindDBError.mmdbError(String(cString: MMDB_strerror(code)))

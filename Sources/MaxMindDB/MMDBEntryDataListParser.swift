@@ -13,7 +13,11 @@ extension MMDB_entry_data_s {
     guard type == MMDB_DATA_TYPE_UTF8_STRING, has_data else {
       return nil
     }
-    return String(decoding: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: utf8_string), count: numericCast(data_size), deallocator: .none), as: UTF8.self)
+
+    return UnsafeBufferPointer(start: utf8_string, count: numericCast(data_size))
+      .withMemoryRebound(to: UInt8.self) { buffer in
+        String(decoding: buffer, as: UTF8.self)
+      }
   }
 }
 
