@@ -56,16 +56,16 @@ public final class MaxMindDB {
     return try decoder.decode(MaxMindDBResult.self, from: dic)
   }
 
-  public func lookupJSON(sockaddr: UnsafePointer<sockaddr>) throws -> [String: Any] {
-    let entry_data_list = try lookup(sockaddr: sockaddr)
+  public func lookupJSON(saddr: inout sockaddr) throws -> [String: Any] {
+    let entry_data_list = try lookup(saddr: &saddr)
     defer {
       MMDB_free_entry_data_list(entry_data_list)
     }
     return try MMDBEntryDataListParser.parse(list: entry_data_list)
   }
 
-  public func lookupResult(sockaddr: UnsafePointer<sockaddr>) throws -> MaxMindDBResult {
-    let dic = try lookupJSON(sockaddr: sockaddr)
+  public func lookupResult(saddr: inout sockaddr) throws -> MaxMindDBResult {
+    let dic = try lookupJSON(saddr: &saddr)
     let decoder = DictionaryDecoder()
     return try decoder.decode(MaxMindDBResult.self, from: dic)
   }
@@ -83,10 +83,10 @@ public final class MaxMindDB {
     return try getEntryDataList(result: &result)
   }
 
-  internal func lookup(sockaddr: UnsafePointer<sockaddr>) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
+  internal func lookup(saddr: UnsafePointer<sockaddr>) throws -> UnsafeMutablePointer<MMDB_entry_data_list_s> {
 
     var mmdbError: CInt = 0
-    var result = MMDB_lookup_sockaddr(&mmdb, sockaddr, &mmdbError)
+    var result = MMDB_lookup_sockaddr(&mmdb, saddr, &mmdbError)
     try showError(mmdbError)
 
     return try getEntryDataList(result: &result)
