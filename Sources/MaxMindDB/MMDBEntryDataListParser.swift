@@ -17,15 +17,14 @@ extension MMDB_entry_data_s {
   }
 }
 
-class MMDBEntryDataListParser {
-  static let shared = MMDBEntryDataListParser()
+enum MMDBEntryDataListParser {
 
   struct ParsedResult<V> {
     let value: V
     let next: UnsafeMutablePointer<MMDB_entry_data_list_s>?
   }
 
-  func parse(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> [String: Any] {
+  static func parse(list: UnsafeMutablePointer<MMDB_entry_data_list_s>, strict: Bool = false) throws -> [String: Any] {
     precondition(numericCast(list.pointee.entry_data.type) == MMDB_DATA_TYPE_MAP)
     let result = try parseDictionary(list: list)
     if strict, result.next != nil {
@@ -34,7 +33,7 @@ class MMDBEntryDataListParser {
     return result.value
   }
 
-  private func parseDictionary(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws -> ParsedResult<[String: Any]> {
+  private static func parseDictionary(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws -> ParsedResult<[String: Any]> {
     var result = [String: Any]()
     var size = list.pointee.entry_data.data_size
 
@@ -55,7 +54,7 @@ class MMDBEntryDataListParser {
     return .init(value: result, next: currentList)
   }
 
-  private func parseValue(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws
+  private static func parseValue(list: UnsafeMutablePointer<MMDB_entry_data_list_s>) throws
   -> ParsedResult<Any> {
     switch Int32(list.pointee.entry_data.type) {
     case MMDB_DATA_TYPE_UTF8_STRING:

@@ -19,12 +19,12 @@ public enum MaxMindDBError: Error, CustomStringConvertible {
   }
 }
 
-public class MaxMindDB {
+public final class MaxMindDB {
   private var mmdb: MMDB_s
 
   public init(mmdbPath: String) throws {
     mmdb = MMDB_s()
-    try showError(MMDB_open(mmdbPath, UInt32(MMDB_MODE_MMAP), &mmdb))
+    try showError(MMDB_open(mmdbPath, numericCast(MMDB_MODE_MMAP), &mmdb))
   }
 
   public convenience init(mmdbURL: URL) throws {
@@ -41,7 +41,7 @@ public class MaxMindDB {
     defer {
       MMDB_free_entry_data_list(entry_data_list)
     }
-    return try MMDBEntryDataListParser.shared.parse(list: entry_data_list)
+    return try MMDBEntryDataListParser.parse(list: entry_data_list)
   }
 
   public func lookupResult(ip: String) throws -> MaxMindDBResult {
