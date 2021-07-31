@@ -11,6 +11,9 @@ let package = Package(
   ],
   products: [
     .library(
+      name: "CMaxMindDB",
+      targets: ["CMaxMindDB"]),
+    .library(
       name: "MaxMindDB",
       targets: ["MaxMindDB"]),
     .library(
@@ -40,6 +43,11 @@ let package = Package(
       dependencies: [
         "MaxMindDB",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
+      ]),
+    .executableTarget(
+      name: "auto-test",
+      dependencies: [
+        "MaxMindDB",
       ]),
     .testTarget(
       name: "MaxMindDBTests",
